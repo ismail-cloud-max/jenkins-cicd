@@ -14,7 +14,7 @@ app.get("/", (req, res) => {
 app.get("/health", (req, res) => {
   res.status(200).json({
     status: "ok",
-    project: "project-1-freestylesssssssssssssssssssssssssssssssssssssssssssss",
+    project: "project-1-freestyle",
     message: "Service is healthy",
   });
 });
