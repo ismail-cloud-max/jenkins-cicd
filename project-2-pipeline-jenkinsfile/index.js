@@ -15,7 +15,7 @@ app.get("/health", (req, res) => {
   res.status(200).json({
     status: "ok",
     project: "project-2-pipeline-jenkinsfile",
-    message: "Service is healthy",
+    message: "Service is healthyy",
   });
 });
 
