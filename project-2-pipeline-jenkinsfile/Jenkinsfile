@@ -1,12 +1,9 @@
 pipeline {
   agent any
-
   environment {
-    PROJECT_DIR = "second-job-pipeline"
     PM2_APP_NAME = "project-2-app"
     EMAIL_TO = "mohamed.ismail.cloud@gmail.com"
   }
-
   stages {
     stage('Preparation') {
       steps {
@@ -18,48 +15,36 @@ pipeline {
         '''
       }
     }
-
     stage('Install Dependencies') {
       steps {
-        dir("${PROJECT_DIR}") {
-          sh 'npm install'
-        }
+        sh 'npm install'
       }
     }
-
     stage('Run Tests') {
       steps {
-        dir("${PROJECT_DIR}") {
-          sh 'npm test'
-        }
+        sh 'npm test'
       }
     }
-
     stage('Deploy with PM2') {
       when {
         expression { currentBuild.currentResult == 'SUCCESS' }
       }
       steps {
-        dir("${PROJECT_DIR}") {
-          sh '''
-            export PATH=$PATH:/usr/local/bin
-            echo "Deploying app using PM2..."
-
-            if pm2 list | grep -q "${PM2_APP_NAME}"; then
-              echo "App exists -> Restarting..."
-              pm2 restart "${PM2_APP_NAME}"
-            else
-              echo "App not found -> Starting..."
-              pm2 start index.js --name "${PM2_APP_NAME}"
-            fi
-
-            pm2 save
-          '''
-        }
+        sh '''
+          export PATH=$PATH:/usr/local/bin
+          echo "Deploying app using PM2..."
+          if pm2 list | grep -q "${PM2_APP_NAME}"; then
+            echo "App exists -> Restarting..."
+            pm2 restart "${PM2_APP_NAME}"
+          else
+            echo "App not found -> Starting..."
+            pm2 start index.js --name "${PM2_APP_NAME}"
+          fi
+          pm2 save
+        '''
       }
     }
   }
-
   post {
     always {
       script {
