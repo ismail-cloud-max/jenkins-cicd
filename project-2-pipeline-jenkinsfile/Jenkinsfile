@@ -2,9 +2,9 @@ pipeline {
   agent any
 
   environment {
-    PROJECT_DIR = "project-2-pipeline-jenkinsfile"
+    PROJECT_DIR = "second-job-pipeline"
     PM2_APP_NAME = "project-2-app"
-    EMAIL_TO = "venkatesangunaraj@gmail.com"
+    EMAIL_TO = "mohamed.ismail.cloud@gmail.com"
   }
 
   stages {
