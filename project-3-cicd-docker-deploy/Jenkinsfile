@@ -1,100 +1,67 @@
 pipeline {
   agent any
-
   environment {
-    PROJECT_DIR = "project-3-cicd-docker-deploy"
-    IMAGE_NAME = "venkatesan004/project-3-pipeline-docker-new"
-    IMAGE_TAG = "${BUILD_NUMBER}"
-    CONTAINER_NAME = "project-3-pipeline-docker-new"
-    EMAIL_TO = "venkatesangunaraj@gmail.com"
-    DOCKER_CREDENTIALS = "dockerhub-credentials"
+    PROJECT_DIR = "project-2-pipeline-jenkinsfile"
+    PM2_APP_NAME = "project-2-app"
+    EMAIL_TO = "mohamed.ismail.cloud@gmail.com"
   }
-
   stages {
-
-    stage("Build") {
-      steps {
-        dir("${PROJECT_DIR}") {
-          sh '''
-            echo "Build started!"
-            echo "Branch: ${GIT_BRANCH}"
-            echo "Build Number: ${BUILD_NUMBER}"
-            npm install
-          '''
-        }
-      }
-    }
-
-    stage("Test") {
-      steps {
-        dir("${PROJECT_DIR}") {
-          sh "npm test"
-        }
-      }
-    }
-
-    stage("Docker Build") {
-      steps {
-        dir("${PROJECT_DIR}") {
-          sh """
-            docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
-            docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest
-          """
-        }
-      }
-    }
-
-    // 🔥 NEW STAGE
-    stage("Push to Docker Hub") {
-      steps {
-        withCredentials([usernamePassword(
-          credentialsId: "${DOCKER_CREDENTIALS}",
-          usernameVariable: 'DOCKER_USER',
-          passwordVariable: 'DOCKER_PASS'
-        )]) {
-          sh '''
-            echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-
-            docker push ${IMAGE_NAME}:${IMAGE_TAG}
-            docker push ${IMAGE_NAME}:latest
-          '''
-        }
-      }
-    }
-
-    stage("Docker Deploy (Local)") {
+    stage('Preparation') {
       steps {
         sh '''
-            # Stop container if running
-            docker stop ${CONTAINER_NAME} || true
-            
-            # Remove container if exists
-            docker rm ${CONTAINER_NAME} || true
-            
-            # Run new container
-            docker run -d \
-              --name ${CONTAINER_NAME} \
-              -p 3003:3003 \
-              ${IMAGE_NAME}:${IMAGE_TAG}
+          echo "Build started!"
+          echo "Branch: ${GIT_BRANCH}"
+          echo "Build Number: ${BUILD_NUMBER}"
+          ls -la
         '''
       }
     }
-  }
-
-  post {
-    success {
-      mail(
-        to: "${EMAIL_TO}",
-        subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-        body: "Project 3 CI/CD succeeded.\nJob: ${env.JOB_NAME}\nBuild: #${env.BUILD_NUMBER}\nURL: ${env.BUILD_URL}"
-      )
+    stage('Install Dependencies') {
+      steps {
+        dir("${PROJECT_DIR}") {
+          sh 'npm install'
+        }
+      }
     }
-    failure {
-      mail(
-        to: "${EMAIL_TO}",
-        subject: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-        body: "Project 3 CI/CD failed.\nJob: ${env.JOB_NAME}\nBuild: #${env.BUILD_NUMBER}\nURL: ${env.BUILD_URL}"
-      )
+    stage('Run Tests') {
+      steps {
+        dir("${PROJECT_DIR}") {
+          sh 'npm test'
+        }
+      }
+    }
+    stage('Deploy with PM2') {
+      when {
+        expression { currentBuild.currentResult == 'SUCCESS' }
+      }
+      steps {
+        dir("${PROJECT_DIR}") {
+          sh '''
+            export PATH=$PATH:/usr/local/bin
+            echo "Deploying app using PM2..."
+            if pm2 list | grep -q "${PM2_APP_NAME}"; then
+              echo "App exists -> Restarting..."
+              pm2 restart "${PM2_APP_NAME}"
+            else
+              echo "App not found -> Starting..."
+              pm2 start index.js --name "${PM2_APP_NAME}"
+            fi
+            pm2 save
+          '''
+        }
+      }
+    }
+  }
+  post {
+    always {
+      script {
+        def buildStatus = currentBuild.currentResult ?: 'UNKNOWN'
+        mail(
+          to: "${EMAIL_TO}",
+          subject: "Jenkins Build ${buildStatus}: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+          body: """Build Notification\n\nJob: ${env.JOB_NAME}\nBuild: #${env.BUILD_NUMBER}\nBranch: ${env.GIT_BRANCH}\nStatus: ${buildStatus}\nURL: ${env.BUILD_URL}"""
+        )
+      }
     }
   }
 }
