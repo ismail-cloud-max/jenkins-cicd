@@ -76,4 +76,10 @@ pipeline {
     }
     failure {
       mail(
-        to:
+        to: "${EMAIL_TO}",
+        subject: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+        body: "Project 3 CI/CD failed.\nJob: ${env.JOB_NAME}\nBuild: #${env.BUILD_NUMBER}\nURL: ${env.BUILD_URL}"
+      )
+    }
+  }
+}
