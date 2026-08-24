@@ -28,8 +28,3 @@ pipeline {
         }
       }
     }
-    // 🔹 Only for main
-    stage("Docker Build") {
-      when {
-}
-    }
