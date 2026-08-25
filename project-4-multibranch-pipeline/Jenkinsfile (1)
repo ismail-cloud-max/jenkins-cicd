@@ -2,7 +2,7 @@ pipeline {
   agent any
   environment {
     PROJECT_DIR = "project-4-multibranch-pipeline"
-    IMAGE_NAME = "venkatesan004/project-4-multibranch-pipeline"
+    IMAGE_NAME = "ismailclouds/project-4-multibranch-pipeline"
     IMAGE_TAG = "${BUILD_NUMBER}"
     CONTAINER_NAME = "project-4-multibranch-pipeline"
     EMAIL_TO = "venkatesangunaraj@gmail.com"
